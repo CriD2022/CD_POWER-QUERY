@@ -1,0 +1,25 @@
+let
+    Source = Folder.Files("C:\Users\CristinaDragan\Greenmill Supply Co\Purchasing - Documents\General\PURCHASING SUPPORT\17. PRICING\9. PRICING DASHBOARD\1.SALES, MARGIN, VOLUME & RATE\SALES"),
+    #"Filtered Hidden Files1" = Table.SelectRows(Source, each [Attributes]?[Hidden]? <> true),
+    #"Invoke Custom Function1" = Table.AddColumn(#"Filtered Hidden Files1", "Transform File (4)", each #"Transform File (4)"([Content])),
+    #"Renamed Columns1" = Table.RenameColumns(#"Invoke Custom Function1", {"Name", "Source.Name"}),
+    #"Removed Other Columns1" = Table.SelectColumns(#"Renamed Columns1", {"Source.Name", "Transform File (4)"}),
+    #"Expanded Table Column1" = Table.ExpandTableColumn(#"Removed Other Columns1", "Transform File (4)", Table.ColumnNames(#"Transform File (4)"(#"Sample File (4)"))),
+    #"Changed Type" = Table.TransformColumnTypes(#"Expanded Table Column1",{{"Source.Name", type text}, {"Internal ID", Int64.Type}, {"Date", type date}, {"SO Reference", type text}, {"Customer", type text}, {"Item", type text}, {"Description", type text}, {"Product Group", type text}, {"Range", type text}, {"Sub Range", type text}, {"Pricing Group", type text}, {"Quantity", Int64.Type}, {"Base Price", type number}, {"Price Level", type text}, {"Effective Rate", type number}, {"Amount", type number}, {"Est. Gross Profit (Line)", type number}, {"GP%", Percentage.Type}, {"Status", type text}, {"Sales Rep", type text}, {"Eff. Rate * Qty", type number}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Source.Name"}),
+    #"Inserted Month Name" = Table.AddColumn(#"Removed Columns", "Month Name", each Date.MonthName([Date]), type text),
+    #"Inserted Year" = Table.AddColumn(#"Inserted Month Name", "Year", each Date.Year([Date]), Int64.Type),
+    #"Added Custom MMM-YY" = Table.AddColumn(#"Inserted Year", "MMM-YY", each Text.Start([Month Name], 3) & "-" & Text.End(Text.From([Year]), 2), type text),
+    #"Changed % Price Level Type From Text to Number" = Table.AddColumn(#"Added Custom MMM-YY", "% Price Level", each if Text.Contains([Price Level], "%") then 
+    Number.From(Text.Remove([Price Level], "%"))
+else if Text.Contains([Price Level], "GM") or
+        Text.Contains([Price Level], "Guest") or
+        Text.Contains([Price Level], "Custom") or
+        Text.Contains([Price Level], "PLUS") then 
+    null
+else 
+    try Number.From([Price Level]) otherwise null),
+    #"Replaced Errors in % Pricing Level" = Table.ReplaceErrorValues(#"Changed % Price Level Type From Text to Number", {{"% Price Level", 0}}),
+    #"Filtered Rows" = Table.SelectRows(#"Replaced Errors in % Pricing Level", each Date.IsInCurrentYear([Date]))
+in
+    #"Filtered Rows"
