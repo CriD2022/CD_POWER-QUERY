@@ -1,0 +1,32 @@
+let
+//Variables
+    StartDate = StartDate,
+    EndDate = Today,
+    Today =DateTime.Date(DateTime.LocalNow())),//Or to get the end of the year use: Date.EndOfYear(DateTime.Date(DateTime.LocalNow())),
+    Duration = Duration.Days((Today-StartDate))+1,
+
+    //Date Columns
+    Dates = List.Dates(StartDate,Duration,#duration(1,0,0,0)),
+    #"Converted to Table" = Table.FromList(Dates, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Changed Type" = Table.TransformColumnTypes(#"Converted to Table",{{"Column1", type date}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"Column1", "Date"}}),
+    #"Inserted Year" = Table.AddColumn(#"Renamed Columns", "Year", each Date.Year([Date]), Int64.Type),
+    #"Inserted QuarterNo" = Table.AddColumn(#"Inserted Year", "QuarterNo", each Date.QuarterOfYear([Date]), Int64.Type),
+    #"Added Quarter" = Table.AddColumn(#"Inserted QuarterNo", "Quarter", each "Q" & Text.From([QuarterNo])),
+    #"Changed Type Quarter" = Table.TransformColumnTypes(#"Added Quarter",{{"Quarter", type text}}),
+    #"Added Quarter Index" = Table.AddColumn(#"Changed Type Quarter", "Quarter Index", each Date.Year([Date]) * 10 + Number.RoundDown((Date.Month([Date]) - 1) / 3) + 1, Int64.Type),
+    #"Inserted Q & Year" = Table.AddColumn(#"Added Quarter Index", "Quarter & Year", each Text.Combine({[Quarter], Text.From([Year], "en-GB")}, "-"), type text),
+    #"Inserted MonthNo" = Table.AddColumn(#"Inserted Q & Year", "MonthNo", each Date.Month([Date]), Int64.Type),
+    #"Inserted Month" = Table.AddColumn(#"Inserted MonthNo", "Month", each Text.Start( Date.MonthName([Date]),3), type text),
+    #"Inserted Merged Mth & Year" = Table.AddColumn(#"Inserted Month", "Month & Year", each Text.Combine({[Month], Text.From([Year], "en-GB")}, "-"), type text),
+    #"Added Month Index" = Table.AddColumn(#"Inserted Merged Mth & Year", "Month Index", each Date.Year([Date]) * 12 + Date.Month([Date]), Int64.Type),
+    #"Inserted Week of Year" = Table.AddColumn(#"Added Month Index", "Week of Year", each Date.WeekOfYear([Date]), Int64.Type),
+    #"Inserted Start of Week" = Table.AddColumn(#"Inserted Week of Year", "Start of Week", each Date.StartOfWeek([Date]), type date),
+    #"Inserted End of Week" = Table.AddColumn(#"Inserted Start of Week", "End of Week", each Date.EndOfWeek([Date]), type date),
+    #"Inserted DayNo" = Table.AddColumn(#"Inserted End of Week", "DayNo", each Date.Day([Date]), Int64.Type),
+    #"Inserted Day of Week" = Table.AddColumn(#"Inserted DayNo", "Day of Week", each Date.DayOfWeek([Date]), Int64.Type),
+    #"Inserted Day" = Table.AddColumn(#"Inserted Day of Week", "Day", each Date.DayOfWeekName([Date]), type text),
+    #"Day & Date" = Table.AddColumn(#"Inserted Day", "Day & Date", each Text.PadStart(Text.From(Date.Day([Date])), 2, "0") & " " & Text.Start(Date.MonthName([Date]), 3) & " " & Text.End(Text.From(Date.Year([Date])), 2) & " (" & Text.Start(Date.DayOfWeekName([Date]), 3) & ")"),
+    #"Weekday/ Weekend" = Table.AddColumn(#"Day & Date", "Weekday/ Weekend", each if Date.DayOfWeek([Date], Day.Monday) < 5 then "Mon - Fri" else "Sat - Sun")
+in
+    #"Weekday/ Weekend"
