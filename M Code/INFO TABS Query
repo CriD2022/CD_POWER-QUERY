@@ -1,0 +1,12 @@
+let
+    Source = Folder.Files("C:\Users\CristinaDragan\Greenmill Supply Co\Purchasing - Documents\General\PURCHASING SUPPORT\17. PRICING\9. PRICING DASHBOARD\3.INFO TABS\INFO TABS"),
+    #"Filtered Hidden Files1" = Table.SelectRows(Source, each [Attributes]?[Hidden]? <> true),
+    #"Invoke Custom Function1" = Table.AddColumn(#"Filtered Hidden Files1", "Transform File (2)", each #"Transform File (2)"([Content])),
+    #"Renamed Columns1" = Table.RenameColumns(#"Invoke Custom Function1", {"Name", "Source.Name"}),
+    #"Removed Other Columns1" = Table.SelectColumns(#"Renamed Columns1", {"Source.Name", "Transform File (2)"}),
+    #"Expanded Table Column1" = Table.ExpandTableColumn(#"Removed Other Columns1", "Transform File (2)", Table.ColumnNames(#"Transform File (2)"(#"Sample File (2)"))),
+    #"Changed Type" = Table.TransformColumnTypes(#"Expanded Table Column1",{{"Source.Name", type text}, {"Date", type date}, {"Internal ID", Int64.Type}, {"Name", type text}, {"Description", type text}, {"Product Group", type text}, {"Item Range", type text}, {"Sub Range", type text}, {"Pricing Group", type text}, {"Item Defined Cost/Benchmark", type number}, {"Supplier Price", type number}, {"Current Cost", type number}, {"Preferred Supplier", type text}, {"Cost Estimate Type", type text}, {"Current RSP", type number}, {"Average Cost", type any}, {"IDC Notes", type text}, {"Similar Items", type text}, {"Item Target Margin", type any}, {"Supplier Code", type text}, {"Currency", type text}, {"Supplier Price Currency", type text}, {"Rework", type text}, {"Drop Ship Item", type text}, {"Supplier Account Manager", type any}, {"Rolling 12 Months", type any}, {"Top 80%", type any}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"Source.Name"}),
+    #"Sorted Rows" = Table.Sort(#"Removed Columns",{{"Date", Order.Ascending}})
+in
+    #"Sorted Rows"
